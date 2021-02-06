@@ -85,11 +85,15 @@ class Transmission:
         return add_result.id
 
     def start_torrents(self, torrent_ids):
-        self.tc.start_torrent(torrent_ids)
+        existing_torrent_ids = list(set(torrent_ids).intersection([[t.id] for t in self.tc.get_torrents()]))
+        if existing_torrent_ids:
+            self.tc.start_torrent(existing_torrent_ids)
         return 0
 
     def delete_torrents(self, torrent_ids):
-        self.tc.remove_torrent(torrent_ids)
+        existing_torrent_ids = list(set(torrent_ids).intersection([[t.id] for t in self.tc.get_torrents()]))
+        if existing_torrent_ids:
+            self.tc.remove_torrent(existing_torrent_ids)
         return 0
 
 
