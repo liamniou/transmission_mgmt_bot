@@ -81,7 +81,10 @@ class Transmission:
         return torrents_dict
 
     def add_torrent(self, torrent_link):
-        add_result = self.tc.add_torrent(torrent_link, download_dir=config['transmission']['transmission_download_dir'])
+        add_result = self.tc.add_torrent(
+            torrent_link,
+            download_dir=os.path.join(config['transmission']['transmission_download_dir'], time.strftime("%d%m%Y%H%M%S"))
+        )
         return add_result.id
 
     def start_torrents(self, torrent_ids):
