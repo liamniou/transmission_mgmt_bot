@@ -138,7 +138,10 @@ def log_and_send_message_decorator(fn):
 def find_magnet_links_by_url(page_url):
     req = Request(page_url, headers={"User-Agent": "Mozilla/5.0"})
     with urlopen(req) as response:
-        content = response.read().decode(response.headers.get_content_charset())
+        charset = response.headers.get_content_charset()
+        if charset is None:
+            charset = "utf-8"
+        content = response.read().decode(charset)
         links = re.findall("href=[\"'](.*?)[\"']", content)
         magnet_links = [link for link in links if link.startswith("magnet:?")]
         return magnet_links
@@ -200,7 +203,7 @@ def list_all_torrents_with_files(message):
 @bot.message_handler(func=lambda m: m.text.startswith(("/add", "magnet:?", "https://")))
 @log_and_send_message_decorator
 def add_new_torrent(message):
-    torrent_link = ""
+    magnet_link = ""
     if message.text.startswith(("/add")):
         magnet_link = message.text.replace("/add ", "", 1)
     elif message.text.startswith(("magnet:?")):
