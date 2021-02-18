@@ -11,6 +11,8 @@ import sys
 import bencodepy
 import hashlib
 import base64
+import re
+from urllib.request import Request, urlopen
 
 
 class Config():
@@ -114,6 +116,15 @@ def log_and_send_message_decorator(fn):
     return wrapper
 
 
+def find_magnet_links_by_url(page_url):
+    req = Request(page_url, headers={'User-Agent': 'Mozilla/5.0'})
+    with urlopen(req) as response:
+        content = response.read().decode(response.headers.get_content_charset())
+        links = re.findall("href=[\"\'](.*?)[\"\']", content)
+        magnet_links = [link for link in links if link.startswith('magnet:?')]
+        return magnet_links
+
+
 @bot.message_handler(commands=['start', 'help'])
 @log_and_send_message_decorator
 def greet_new_user(message):
@@ -163,12 +174,18 @@ def list_all_torrents_with_files(message):
     return reply
 
 
-@bot.message_handler(func=lambda m: m.text.startswith(("/add", "magnet:?")))
+@bot.message_handler(func=lambda m: m.text.startswith(("/add", "magnet:?", "https://")))
 @log_and_send_message_decorator
 def add_new_torrent(message):
-    torrent_link = message.text.replace('/add ', '', 1)
-    if 'magnet:?' in torrent_link:
-        add_result = transmission.add_torrent(torrent_link)
+    torrent_link = ""
+    if message.text.startswith(("/add")):
+        magnet_link = message.text.replace('/add ', '', 1)
+    elif message.text.startswith(("magnet:?")):
+        magnet_link = message.text
+    elif message.text.startswith(("https://")):
+        magnet_link = find_magnet_links_by_url(message.text)[0]
+    if 'magnet:?' in magnet_link:
+        add_result = transmission.add_torrent(magnet_link)
         reply = "Torrent was successfully added with ID #{0}".format(add_result)
     else:
         reply = "Please check your magnet link and try again"
