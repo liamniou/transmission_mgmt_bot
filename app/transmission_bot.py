@@ -209,7 +209,11 @@ def add_new_torrent(message):
     elif message.text.startswith(("magnet:?")):
         magnet_link = message.text
     elif message.text.startswith(("https://")):
-        magnet_link = find_magnet_links_by_url(message.text)[0]
+        magnet_links = find_magnet_links_by_url(message.text)
+        if len(magnet_links) == 0:
+            return "Can't find a magnet link for your URL, please provide it directly"
+        else:
+            magnet_link = magnet_links[0]
     if "magnet:?" in magnet_link:
         add_result = transmission.add_torrent(magnet_link)
         reply = "Torrent was successfully added with ID #{0}".format(add_result)
