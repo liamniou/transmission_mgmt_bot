@@ -200,7 +200,7 @@ def list_all_torrents_with_files(message):
     return reply
 
 
-@bot.message_handler(func=lambda m: m.text.startswith(("/add", "magnet:?", "https://")))
+@bot.message_handler(func=lambda m: m.text is not None and m.text.startswith(("/add", "magnet:?", "https://")))
 @log_and_send_message_decorator
 def add_new_torrent(message):
     magnet_link = ""
