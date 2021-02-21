@@ -15,6 +15,10 @@ import re
 from urllib.request import Request, urlopen
 
 
+#TODO: move to config
+AUTHORIZED_USERS = [294967926, 191151492]
+
+
 class Config:
     config = configparser.ConfigParser()
     config_file_path = None
@@ -128,7 +132,10 @@ bot = telebot.TeleBot(config["telegram"]["token"], threaded=False)
 def log_and_send_message_decorator(fn):
     def wrapper(message):
         log.info("[FROM {}] [{}]".format(message.chat.id, message.text))
-        reply = fn(message)
+        if message.chat.id in AUTHORIZED_USERS:
+            reply = fn(message)
+        else:
+            reply = "Sorry, this is a private bot"
         log.info("[TO {}] [{}]".format(message.chat.id, reply))
         bot.send_message(message.chat.id, reply)
 
