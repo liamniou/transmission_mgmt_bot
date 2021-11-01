@@ -37,6 +37,31 @@ Partially optional variables (they are ignored if you set `TRANSMISSION_HOST`)
 ```sh
 $ docker build -t transmission_mgmt_bot_image .
 ```
+#### Building the image on Raspberry PI
+You will probably get following error when you build the image on Raspberry Pi:
+```
+Step 4/6 : RUN pip install -r requirements.txt
+ ---> Running in dbffcfcbfa54
+Fatal Python error: pyinit_main: can't initialize time
+Python runtime state: core initialized
+PermissionError: [Errno 1] Operation not permitted
+
+Current thread 0xb6f0d010 (most recent call first):
+<no Python frame>
+The command '/bin/sh -c pip install -r requirements.txt' returned a non-zero code: 1
+```
+
+You need to install libseccomp2 >=2.4.3-1. It is currently not available for Raspberry PI OS, but can be installed from the Buster Backports repo:
+```
+# Get signing keys to verify the new packages, otherwise they will not install
+$ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 04EE7237B7D453EC 648ACFD622F3D138
+
+# Add the Buster backport repository to apt sources.list
+$ echo 'deb http://httpredir.debian.org/debian buster-backports main contrib non-free' | sudo tee -a /etc/apt/sources.list.d/debian-backports.list
+
+$ sudo apt update
+$ sudo apt install libseccomp2 -t buster-backports
+```
 
 ### Start the container
 ```sh
