@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import time
 import telebot
-import configparser
 import os
 import transmissionrpc
 import logging as log
@@ -13,57 +12,20 @@ import hashlib
 import base64
 import re
 from urllib.request import Request, urlopen
+from get_ip import get_ip_of_running_transmission
 
 
-#TODO: move to config
-AUTHORIZED_USERS = [294967926, 191151492]
-
-
-class Config:
-    config = configparser.ConfigParser()
-    config_file_path = None
-
-    def __init__(self):
-        self.config_file_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "config"
-        )
-        self.load_config()
-
-    def load_config(self):
-        """Load configuration parameters"""
-        if os.path.exists(self.config_file_path):
-            self.config.read(self.config_file_path)
-        else:
-            self.set_default_config()
-
-    def set_default_config(self):
-        """Set default configuration"""
-        self.config["telegram"] = {}
-        self.config["telegram"]["token"] = "TELEGRAM_BOT_TOKEN"
-        self.config["transmission"] = {}
-        self.config["transmission"]["transmission_host"] = "localhost"
-        self.config["transmission"]["transmission_port"] = "9091"
-        self.config["transmission"]["transmission_user"] = "admin"
-        self.config["transmission"]["transmission_password"] = ""
-        self.config["transmission"]["transmission_download_dir"] = ""
-
-        with open(self.config_file_path, "w") as config_file:
-            self.config.write(config_file)
-
-    def get(self):
-        """Obtain configuration"""
-        return self.config
+AUTHORIZED_USERS = os.getenv('AUTHORIZED_USERS', '294967926,191151492').split(',')
 
 
 class Transmission:
-    def __init__(self, config):
-        self.config = config
+    def __init__(self):
         try:
             self.tc = transmissionrpc.Client(
-                address=config["transmission"]["transmission_host"],
-                port=config["transmission"]["transmission_port"],
-                user=config["transmission"]["transmission_user"],
-                password=config["transmission"]["transmission_password"],
+                address=os.getenv('TRANSMISSION_HOST', get_ip_of_running_transmission()),
+                port=os.getenv('TRANSMISSION_PORT', 9091),
+                user=os.getenv('TRANSMISSION_USER', 'transmission'),
+                password=os.getenv('TRANSMISSION_PASSWORD', 'transmission'),
             )
         except transmissionrpc.error.TransmissionError:
             print("ERROR: Failed to connect to Transmission. Check rpc configuration.")
@@ -101,7 +63,7 @@ class Transmission:
         add_result = self.tc.add_torrent(
             torrent_link,
             download_dir=os.path.join(
-                config["transmission"]["transmission_download_dir"],
+                os.getenv('TRANSMISSION_DOWNLOAD_DIR', '/tmp/downloads'),
                 time.strftime("%d%m%Y%H%M%S"),
             ),
         )
@@ -123,14 +85,12 @@ class Transmission:
             self.tc.remove_torrent(existing_torrent_ids)
         return 0
 
-
-config = Config().get()
-transmission = Transmission(config)
-bot = telebot.TeleBot(config["telegram"]["token"], threaded=False)
+bot = telebot.TeleBot(os.getenv('TELEGRAM_BOT_TOKEN'), threaded=False)
 
 
 def log_and_send_message_decorator(fn):
     def wrapper(message):
+        bot.send_message(message.chat.id, f"Executing your command, please wait...")
         log.info("[FROM {}] [{}]".format(message.chat.id, message.text))
         if message.chat.id in AUTHORIZED_USERS:
             reply = fn(message)
@@ -182,6 +142,7 @@ def greet_new_user(message):
 @bot.message_handler(commands=["list"])
 @log_and_send_message_decorator
 def list_all_torrents(message):
+    transmission = Transmission()
     torrents = transmission.get_torrents()
     if torrents:
         reply = "Active torrents:\n"
@@ -195,6 +156,7 @@ def list_all_torrents(message):
 @bot.message_handler(commands=["list_w_files"])
 @log_and_send_message_decorator
 def list_all_torrents_with_files(message):
+    transmission = Transmission()
     torrents = transmission.get_torrents_with_files()
     if torrents:
         reply = "Active torrents:\n"
@@ -222,6 +184,7 @@ def add_new_torrent(message):
         else:
             magnet_link = magnet_links[0]
     if "magnet:?" in magnet_link:
+        transmission = Transmission()
         add_result = transmission.add_torrent(magnet_link)
         reply = "Torrent was successfully added with ID #{0}".format(add_result)
     else:
@@ -242,6 +205,7 @@ def add_new_torrent_by_file(message):
         hashcontents = bencodepy.encode(subj)
         digest = hashlib.sha1(hashcontents).digest()
         b32hash = base64.b32encode(digest).decode()
+        transmission = Transmission()
         add_result = transmission.add_torrent("magnet:?xt=urn:btih:" + b32hash)
         os.remove(torrent_file_name)
         return "Torrent was successfully added with ID #{0}".format(add_result)
@@ -251,6 +215,7 @@ def add_new_torrent_by_file(message):
 @log_and_send_message_decorator
 def add_new_torrent(message):
     torrent_ids = message.text.replace("/go ", "", 1).split()
+    transmission = Transmission()
     transmission.start_torrents(torrent_ids)
     return "Torrents with IDs {0} were started.\n".format(
         " ".join(str(e) for e in torrent_ids)
@@ -260,6 +225,7 @@ def add_new_torrent(message):
 @bot.message_handler(commands=["delete"])
 @log_and_send_message_decorator
 def delete_torrents(message):
+    transmission = Transmission()
     torrent_ids = message.text.replace("/delete ", "", 1).split()
     transmission.delete_torrents(torrent_ids)
     return "Torrents with IDs {0} were deleted.\n".format(
