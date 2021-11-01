@@ -12,7 +12,7 @@ import hashlib
 import base64
 import re
 from urllib.request import Request, urlopen
-from get_ip import get_ip_of_running_transmission
+from get_ip import get_ip_of_running_transmission, trigger_terraform
 
 
 AUTHORIZED_USERS = [int(x) for x in os.getenv('AUTHORIZED_USERS', '294967926,191151492').split(",")]
@@ -230,6 +230,13 @@ def delete_torrents(message):
     return "Torrents with IDs {0} were deleted.\n".format(
         " ".join(str(e) for e in torrent_ids)
     )
+
+
+@bot.message_handler(commands=["destroy"])
+@log_and_send_message_decorator
+def send_destroy_request(message):
+    trigger_terraform("true", "Destroy from bot with command")
+    return "Destroy request was sent"
 
 
 def signal_handler(signal_number, frame):
