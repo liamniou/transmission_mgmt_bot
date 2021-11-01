@@ -68,5 +68,5 @@ $ sudo apt install libseccomp2 -t buster-backports
 $ docker run -dit \
     --env TELEGRAM_BOT_TOKEN=some_token \
     --env TRANSMISSION_HOST=localhost \
-    --name=transmission_mgmt_bot -v transmission_mgmt_bot_app:/app transmission_mgmt_bot_image
+    --name=transmission_mgmt_bot transmission_mgmt_bot_image
 ```
