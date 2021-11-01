@@ -15,8 +15,7 @@ from urllib.request import Request, urlopen
 from get_ip import get_ip_of_running_transmission
 
 
-AUTHORIZED_USERS = os.getenv('AUTHORIZED_USERS', '294967926,191151492').split(',')
-
+AUTHORIZED_USERS = [int(x) for x in os.getenv('AUTHORIZED_USERS', '294967926,191151492').split(",")]
 
 class Transmission:
     def __init__(self):
