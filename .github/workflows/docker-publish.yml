@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - master
 
 env:
   DOCKER_IMAGE: liamnou/transmission_mgmt_bot
