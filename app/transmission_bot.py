@@ -75,6 +75,10 @@ class Transmission:
         if existing_torrent_ids:
             self.tc.start_torrent(existing_torrent_ids)
         return 0
+    
+    def set_wanted(self, torrent_id, file_ids):
+        result = self.tc.change_torrent([torrent_id], files_wanted=[file_ids])
+        return result
 
     def delete_torrents(self, torrent_ids):
         existing_torrent_ids = list(
@@ -166,6 +170,15 @@ def list_all_torrents_with_files(message):
     else:
         reply = "There are no active torrents"
     return reply
+
+
+@bot.message_handler(commands=["wanted"])
+@log_and_send_message_decorator
+def list_all_torrents_with_files(message):
+    split_message = message.text.replace("/wanted ", "", 1).split()
+    transmission = Transmission()
+    transmission.set_wanted(split_message[0], split_message[1:])
+    return f"Torrent {split_message[0]} download only {split_message[1:]}"
 
 
 @bot.message_handler(func=lambda m: m.text is not None and m.text.startswith(("/add", "magnet:?", "https://")))
