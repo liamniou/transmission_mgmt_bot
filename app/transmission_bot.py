@@ -77,7 +77,12 @@ class Transmission:
         return 0
     
     def set_wanted(self, torrent_id, file_ids):
-        result = self.tc.change_torrent([torrent_id], files_wanted=[int(x) for x in file_ids])
+        files_dict = self.tc.get_files([torrent_id])
+        for torrent_id, files in files_dict.items():
+            for file_id, props in files.items():
+                if file_id not in file_ids:
+                    files_dict[torrent_id][file_id]['selected'] = 'False'
+        result = self.tc.set_files(files_dict)
         return result
 
     def delete_torrents(self, torrent_ids):
@@ -177,7 +182,7 @@ def list_all_torrents_with_files(message):
 def list_all_torrents_with_files(message):
     split_message = message.text.replace("/wanted ", "", 1).split()
     transmission = Transmission()
-    transmission.set_wanted(split_message[0], split_message[1:])
+    transmission.set_wanted(split_message[0], [int(x) for x in split_message[1:]])
     return f"Torrent {split_message[0]} download only {split_message[1:]}"
 
 
