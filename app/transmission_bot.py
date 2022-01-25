@@ -77,7 +77,7 @@ class Transmission:
         return 0
     
     def set_wanted(self, torrent_id, file_ids):
-        result = self.tc.change_torrent([torrent_id], files_wanted=file_ids)
+        result = self.tc.change_torrent([torrent_id], files_wanted=[int(x) for x in file_ids])
         return result
 
     def delete_torrents(self, torrent_ids):
