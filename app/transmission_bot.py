@@ -81,7 +81,7 @@ class Transmission:
         for torrent_id, files in files_dict.items():
             for file_id, props in files.items():
                 if file_id not in file_ids:
-                    files_dict[torrent_id][file_id]['selected'] = 'False'
+                    files_dict[torrent_id][file_id]['selected'] = False
         result = self.tc.set_files(files_dict)
         return result
 
